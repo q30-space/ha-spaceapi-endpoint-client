@@ -56,7 +56,7 @@ class IntegrationBlueprintApiClient:
             url=f"{self._host_url}/api/space",
         )
 
-    async def async_set_space_state(self, open_state: bool) -> Any:
+    async def async_set_space_state(self, *, open_state: bool) -> Any:
         """Set space state via the API."""
         message = "Space was switched on" if open_state else "Space was switched off"
         return await self._api_wrapper(
