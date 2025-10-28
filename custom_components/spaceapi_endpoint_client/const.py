@@ -1,8 +1,8 @@
-"""Constants for integration_blueprint."""
+"""Constants for spaceapi_endpoint_client."""
 
 from logging import Logger, getLogger
 
 LOGGER: Logger = getLogger(__package__)
 
-DOMAIN = "integration_blueprint"
+DOMAIN = "spaceapi_endpoint_client"
 ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"

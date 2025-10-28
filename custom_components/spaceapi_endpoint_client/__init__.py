@@ -1,8 +1,8 @@
 """
-Custom integration to integrate integration_blueprint with Home Assistant.
+Custom integration to integrate spaceapi_endpoint_client with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/ludeeus/integration_blueprint
+https://github.com/ludeeus/spaceapi_endpoint_client
 """
 
 from __future__ import annotations

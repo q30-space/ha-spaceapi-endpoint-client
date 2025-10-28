@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator for integration_blueprint."""
+"""DataUpdateCoordinator for spaceapi_endpoint_client."""
 
 from __future__ import annotations
 
