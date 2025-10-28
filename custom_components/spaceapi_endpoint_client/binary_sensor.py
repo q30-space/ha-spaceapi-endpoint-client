@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 ENTITY_DESCRIPTIONS = (
     BinarySensorEntityDescription(
         key="spaceapi_endpoint_client",
-        name="Integration Blueprint Binary Sensor",
+        name="Spaceapi Endpoint Client Binary Sensor",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
     ),
 )

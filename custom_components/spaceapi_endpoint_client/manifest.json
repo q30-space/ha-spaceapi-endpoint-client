@@ -1,6 +1,6 @@
 {
   "domain": "spaceapi_endpoint_client",
-  "name": "Integration blueprint",
+  "name": "Spaceapi Endpoint Client",
   "codeowners": [
     "@ludeeus"
   ],
