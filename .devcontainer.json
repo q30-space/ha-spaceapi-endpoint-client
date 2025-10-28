@@ -1,5 +1,5 @@
 {
-    "name": "ludeeus/spaceapi_endpoint_client",
+    "name": "q30-space/ha-spaceapi-endpoint-client",
     "image": "mcr.microsoft.com/devcontainers/python:3.13",
     "postCreateCommand": "scripts/setup",
     "forwardPorts": [

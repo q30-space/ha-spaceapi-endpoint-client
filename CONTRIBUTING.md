@@ -48,7 +48,7 @@ Use [black](https://github.com/ambv/black) to make sure the code follows the sty
 
 ## Test your code modification
 
-This custom component is based on [spaceapi_endpoint_client template](https://github.com/ludeeus/spaceapi_endpoint_client).
+This custom component is based on [spaceapi_endpoint_client template](https://github.com/q30-space/ha-spaceapi-endpoint-client).
 
 It comes with development environment in a container, easy to launch
 if you use Visual Studio Code. With this container you will have a stand alone

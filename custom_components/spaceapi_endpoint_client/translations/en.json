@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "description": "If you need help with the configuration have a look here: https://github.com/ludeeus/spaceapi_endpoint_client",
+                "description": "If you need help with the configuration have a look here: https://github.com/q30-space/ha-spaceapi-endpoint-client",
                 "data": {
                     "username": "Username",
                     "password": "Password"

@@ -5,8 +5,8 @@
     "@ludeeus"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/ludeeus/spaceapi_endpoint_client",
+  "documentation": "https://github.com/q30-space/ha-spaceapi-endpoint-client",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/ludeeus/spaceapi_endpoint_client/issues",
+  "issue_tracker": "https://github.com/q30-space/ha-spaceapi-endpoint-client/issues",
   "version": "0.1.0"
 }

@@ -2,7 +2,7 @@
 Custom integration to integrate spaceapi_endpoint_client with Home Assistant.
 
 For more details about this integration, please refer to
-https://github.com/ludeeus/spaceapi_endpoint_client
+https://github.com/q30-space/ha-spaceapi-endpoint-client
 """
 
 from __future__ import annotations
