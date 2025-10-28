@@ -36,33 +36,41 @@ def _verify_response_or_raise(response: aiohttp.ClientResponse) -> None:
 
 
 class IntegrationBlueprintApiClient:
-    """Sample API Client."""
+    """SpaceAPI Client."""
 
     def __init__(
         self,
-        username: str,
-        password: str,
+        host_url: str,
+        api_key: str,
         session: aiohttp.ClientSession,
     ) -> None:
-        """Sample API Client."""
-        self._username = username
-        self._password = password
+        """Initialize SpaceAPI Client."""
+        self._host_url = host_url.rstrip("/")
+        self._api_key = api_key
         self._session = session
 
-    async def async_get_data(self) -> Any:
-        """Get data from the API."""
+    async def async_get_space_state(self) -> Any:
+        """Get space state from the API."""
         return await self._api_wrapper(
             method="get",
-            url="https://jsonplaceholder.typicode.com/posts/1",
+            url=f"{self._host_url}/api/space",
         )
 
-    async def async_set_title(self, value: str) -> Any:
-        """Get data from the API."""
+    async def async_set_space_state(self, open_state: bool) -> Any:
+        """Set space state via the API."""
+        message = "Space was switched on" if open_state else "Space was switched off"
         return await self._api_wrapper(
-            method="patch",
-            url="https://jsonplaceholder.typicode.com/posts/1",
-            data={"title": value},
-            headers={"Content-type": "application/json; charset=UTF-8"},
+            method="post",
+            url=f"{self._host_url}/api/space/state",
+            data={
+                "open": open_state,
+                "message": message,
+                "trigger_person": "Home Assistant SpaceAPI",
+            },
+            headers={
+                "X-API-Key": self._api_key,
+                "Content-Type": "application/json",
+            },
         )
 
     async def _api_wrapper(

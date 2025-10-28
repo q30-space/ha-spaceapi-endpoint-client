@@ -2,20 +2,20 @@
     "config": {
         "step": {
             "user": {
-                "description": "If you need help with the configuration have a look here: https://github.com/q30-space/ha-spaceapi-endpoint-client",
+                "description": "Configure your SpaceAPI endpoint. If you need help with the configuration have a look here: https://github.com/q30-space/ha-spaceapi-endpoint-client",
                 "data": {
-                    "username": "Username",
-                    "password": "Password"
+                    "host": "Host URL",
+                    "api_key": "API Key"
                 }
             }
         },
         "error": {
-            "auth": "Username/Password is wrong.",
-            "connection": "Unable to connect to the server.",
+            "auth": "API Key is invalid.",
+            "connection": "Unable to connect to the SpaceAPI server.",
             "unknown": "Unknown error occurred."
         },
         "abort": {
-            "already_configured": "This entry is already configured."
+            "already_configured": "This SpaceAPI endpoint is already configured."
         }
     }
 }

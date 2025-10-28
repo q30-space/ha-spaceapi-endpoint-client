@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from slugify import slugify
@@ -15,7 +14,7 @@ from .api import (
     IntegrationBlueprintApiClientCommunicationError,
     IntegrationBlueprintApiClientError,
 )
-from .const import DOMAIN, LOGGER
+from .const import CONF_API_KEY, CONF_HOST, DOMAIN, LOGGER
 
 
 class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -32,8 +31,8 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 await self._test_credentials(
-                    username=user_input[CONF_USERNAME],
-                    password=user_input[CONF_PASSWORD],
+                    host_url=user_input[CONF_HOST],
+                    api_key=user_input[CONF_API_KEY],
                 )
             except IntegrationBlueprintApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)
@@ -45,15 +44,10 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 LOGGER.exception(exception)
                 _errors["base"] = "unknown"
             else:
-                await self.async_set_unique_id(
-                    ## Do NOT use this in production code
-                    ## The unique_id should never be something that can change
-                    ## https://developers.home-assistant.io/docs/config_entries_config_flow_handler#unique-ids
-                    unique_id=slugify(user_input[CONF_USERNAME])
-                )
+                await self.async_set_unique_id(unique_id=slugify(user_input[CONF_HOST]))
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=user_input[CONF_USERNAME],
+                    title=f"SpaceAPI ({user_input[CONF_HOST]})",
                     data=user_input,
                 )
 
@@ -62,14 +56,14 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_USERNAME,
-                        default=(user_input or {}).get(CONF_USERNAME, vol.UNDEFINED),
+                        CONF_HOST,
+                        default=(user_input or {}).get(CONF_HOST, vol.UNDEFINED),
                     ): selector.TextSelector(
                         selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.TEXT,
+                            type=selector.TextSelectorType.URL,
                         ),
                     ),
-                    vol.Required(CONF_PASSWORD): selector.TextSelector(
+                    vol.Required(CONF_API_KEY): selector.TextSelector(
                         selector.TextSelectorConfig(
                             type=selector.TextSelectorType.PASSWORD,
                         ),
@@ -79,11 +73,11 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors=_errors,
         )
 
-    async def _test_credentials(self, username: str, password: str) -> None:
+    async def _test_credentials(self, host_url: str, api_key: str) -> None:
         """Validate credentials."""
         client = IntegrationBlueprintApiClient(
-            username=username,
-            password=password,
+            host_url=host_url,
+            api_key=api_key,
             session=async_create_clientsession(self.hass),
         )
-        await client.async_get_data()
+        await client.async_get_space_state()

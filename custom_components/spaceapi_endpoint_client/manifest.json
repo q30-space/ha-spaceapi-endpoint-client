@@ -2,7 +2,7 @@
   "domain": "spaceapi_endpoint_client",
   "name": "Spaceapi Endpoint Client",
   "codeowners": [
-    "@ludeeus"
+    "@pliski"
   ],
   "config_flow": true,
   "documentation": "https://github.com/q30-space/ha-spaceapi-endpoint-client",
