@@ -55,6 +55,7 @@ class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
         self.entity_description = entity_description
         self._attr_assumed_state = False
         self._optimistic_state: bool | None = None
+        self._is_switching = False  # Lock to prevent concurrent state changes
 
     @property
     def is_on(self) -> bool:
@@ -66,6 +67,16 @@ class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
 
     async def async_turn_on(self, **_: Any) -> None:
         """Turn on the switch."""
+        # Check if already switching to prevent rapid-fire clicks
+        if self._is_switching:
+            LOGGER.debug(
+                "Ignoring turn_on request - switch operation already in progress"
+            )
+            return
+
+        # Set lock to prevent concurrent operations
+        self._is_switching = True
+
         # Set optimistic state immediately for responsive UI
         self._optimistic_state = True
         self.async_write_ha_state()
@@ -91,9 +102,22 @@ class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
             await self.coordinator.async_request_refresh()
             msg = f"Failed to turn on space: {err}"
             raise HomeAssistantError(msg) from err
+        finally:
+            # Always release the lock
+            self._is_switching = False
 
     async def async_turn_off(self, **_: Any) -> None:
         """Turn off the switch."""
+        # Check if already switching to prevent rapid-fire clicks
+        if self._is_switching:
+            LOGGER.debug(
+                "Ignoring turn_off request - switch operation already in progress"
+            )
+            return
+
+        # Set lock to prevent concurrent operations
+        self._is_switching = True
+
         # Set optimistic state immediately for responsive UI
         self._optimistic_state = False
         self.async_write_ha_state()
@@ -119,3 +143,6 @@ class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
             await self.coordinator.async_request_refresh()
             msg = f"Failed to turn off space: {err}"
             raise HomeAssistantError(msg) from err
+        finally:
+            # Always release the lock
+            self._is_switching = False
