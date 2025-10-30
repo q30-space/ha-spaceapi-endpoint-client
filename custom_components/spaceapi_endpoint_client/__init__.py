@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .data import IntegrationBlueprintConfigEntry
 
 PLATFORMS: list[Platform] = [
-    Platform.SWITCH,
+    Platform.BINARY_SENSOR,
 ]
 
 
@@ -44,8 +44,8 @@ async def async_setup_entry(
     entry.runtime_data = IntegrationBlueprintData(
         client=IntegrationBlueprintApiClient(
             host_url=entry.data[CONF_HOST],
-            api_key=entry.data[CONF_API_KEY],
             session=async_get_clientsession(hass),
+            api_key=entry.data.get(CONF_API_KEY),
         ),
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
@@ -54,7 +54,13 @@ async def async_setup_entry(
     # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
     await coordinator.async_config_entry_first_refresh()
 
+    # Always load binary sensor platform
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Conditionally load switch platform if API key is provided
+    if entry.data.get(CONF_API_KEY):
+        await hass.config_entries.async_forward_entry_setup(entry, Platform.SWITCH)
+
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
@@ -65,7 +71,13 @@ async def async_unload_entry(
     entry: IntegrationBlueprintConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    # Unload binary sensor platform
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    # Unload switch platform if it was loaded
+    if entry.data.get(CONF_API_KEY):
+        switch_unload = await hass.config_entries.async_unload_platforms(entry, [Platform.SWITCH])
+        unload_ok = unload_ok and switch_unload
+    return unload_ok
 
 
 async def async_reload_entry(
@@ -74,3 +86,4 @@ async def async_reload_entry(
 ) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
+

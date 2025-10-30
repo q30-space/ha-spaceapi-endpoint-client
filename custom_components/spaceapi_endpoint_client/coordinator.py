@@ -30,3 +30,4 @@ class BlueprintDataUpdateCoordinator(DataUpdateCoordinator):
             raise ConfigEntryAuthFailed(exception) from exception
         except IntegrationBlueprintApiClientError as exception:
             raise UpdateFailed(exception) from exception
+

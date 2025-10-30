@@ -41,12 +41,12 @@ class IntegrationBlueprintApiClient:
     def __init__(
         self,
         host_url: str,
-        api_key: str,
         session: aiohttp.ClientSession,
+        api_key: str | None = None,
     ) -> None:
         """Initialize SpaceAPI Client."""
         self._host_url = host_url.rstrip("/")
-        self._api_key = api_key
+        self._api_key = api_key or ""
         self._session = session
 
     async def async_get_space_state(self) -> Any:
@@ -58,6 +58,9 @@ class IntegrationBlueprintApiClient:
 
     async def async_set_space_state(self, *, open_state: bool) -> Any:
         """Set space state via the API."""
+        if not self._api_key:
+            msg = "API key is required to set space state"
+            raise IntegrationBlueprintApiClientAuthenticationError(msg)
         message = "Space was switched on" if open_state else "Space was switched off"
         return await self._api_wrapper(
             method="post",

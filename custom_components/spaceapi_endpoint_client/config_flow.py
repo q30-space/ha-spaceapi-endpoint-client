@@ -32,7 +32,7 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await self._test_credentials(
                     host_url=user_input[CONF_HOST],
-                    api_key=user_input[CONF_API_KEY],
+                    api_key=user_input.get(CONF_API_KEY),
                 )
             except IntegrationBlueprintApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)
@@ -63,7 +63,10 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             type=selector.TextSelectorType.URL,
                         ),
                     ),
-                    vol.Required(CONF_API_KEY): selector.TextSelector(
+                    vol.Optional(
+                        CONF_API_KEY,
+                        default=(user_input or {}).get(CONF_API_KEY, vol.UNDEFINED),
+                    ): selector.TextSelector(
                         selector.TextSelectorConfig(
                             type=selector.TextSelectorType.PASSWORD,
                         ),
@@ -73,11 +76,13 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             errors=_errors,
         )
 
-    async def _test_credentials(self, host_url: str, api_key: str) -> None:
+    async def _test_credentials(
+        self, host_url: str, api_key: str | None = None
+    ) -> None:
         """Validate credentials."""
         client = IntegrationBlueprintApiClient(
             host_url=host_url,
-            api_key=api_key,
             session=async_create_clientsession(self.hass),
+            api_key=api_key or "",
         )
         await client.async_get_space_state()

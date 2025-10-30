@@ -5,7 +5,7 @@
                 "description": "Configure your SpaceAPI endpoint. If you need help with the configuration have a look here: https://github.com/q30-space/ha-spaceapi-endpoint-client",
                 "data": {
                     "host": "Host URL",
-                    "api_key": "API Key"
+                    "api_key": "API Key (Optional - Required only to update the space status)"
                 }
             }
         },

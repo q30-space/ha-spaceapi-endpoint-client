@@ -34,3 +34,4 @@ class IntegrationBlueprintEntity(CoordinatorEntity[BlueprintDataUpdateCoordinato
             model="SpaceAPI v15",
             configuration_url=host_url,
         )
+
