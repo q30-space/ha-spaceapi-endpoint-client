@@ -59,7 +59,7 @@ async def async_setup_entry(
 
     # Conditionally load switch platform if API key is provided
     if entry.data.get(CONF_API_KEY):
-        await hass.config_entries.async_forward_entry_setup(entry, Platform.SWITCH)
+        await hass.config_entries.async_forward_entry_setups(entry, [Platform.SWITCH])
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
