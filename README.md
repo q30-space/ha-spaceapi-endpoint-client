@@ -15,9 +15,9 @@ SpaceAPI is a standardized API specification used by hackerspaces, makerspaces, 
 
 ## Features
 
-- 🚪 **Toggle Switch** - Control your space's open/closed status with a single switch
+- 🚪 **Toggle Switch** (optional) - Control your space's open/closed status when an API key is provided
 - 🔄 **Real-time Status** - Automatic polling every minute to keep the status up-to-date
-- 🔒 **Secure Authentication** - API key-based authentication for protected operations
+- 🔒 **Secure Authentication** (optional) - API key-based authentication for protected operations
 - ⚡ **Optimistic Updates** - Instant UI feedback with race condition protection
 - 🛡️ **Debounce Protection** - Prevents API spam from rapid clicking
 - 📝 **Debug Logging** - Comprehensive logging for troubleshooting
@@ -26,7 +26,7 @@ SpaceAPI is a standardized API specification used by hackerspaces, makerspaces, 
 
 - Home Assistant 2021.1.0 or newer
 - A [SpaceAPI endpoint](https://github.com/q30-space/spaceapi-endpoint) server (v15 specification)
-- API key for authentication
+- API key for authentication (optional; not required if only monitor the status of the space)
 
 ## Installation
 
@@ -58,25 +58,32 @@ SpaceAPI is a standardized API specification used by hackerspaces, makerspaces, 
 3. Search for "**SpaceAPI Endpoint Client**"
 4. Enter your configuration:
    - **Host URL**: The base URL of your SpaceAPI endpoint (e.g., `http://localhost:8080`)
-   - **API Key**: Your API authentication key
+   - **API Key** (optional): Your API authentication key. Provide it to enable switching (write access). Leave empty for read-only monitoring.
 
 ### Configuration Parameters
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
 | Host URL | Yes | The base URL of your SpaceAPI server |
-| API Key | Yes | Authentication key for POST operations |
+| API Key | No | Optional. Required to enable POST operations (switch control). |
+
+### Behavior With and Without API Key
+
+- Without API key: read-only monitoring. The integration polls and displays your space's current open/closed status; no state changes are sent.
+- With API key: read-write control. You can toggle the space state from Home Assistant; the integration will POST updates to your SpaceAPI server.
 
 ## Usage
 
-Once configured, the integration creates a device named "SpaceAPI (your-url)" with a single switch entity called "Space Status".
+Once configured, the integration creates a device named "SpaceAPI (your-url)" with an entity that reflects your space's current open/closed state. If you provide an API key, a toggle control is available from Home Assistant to change the state.
 
 ### Space Status Switch
+
+- This section applies when an API key is configured.
 
 - **ON** = Space is open 🟢
 - **OFF** = Space is closed 🔴
 
-When you toggle the switch:
+When you toggle the switch (with API key configured):
 - **Turning ON** sends a POST request with `{"open": true, "message": "Space was switched on", "trigger_person": "Home Assistant SpaceAPI"}`
 - **Turning OFF** sends a POST request with `{"open": false, "message": "Space was switched off", "trigger_person": "Home Assistant SpaceAPI"}`
 
@@ -112,7 +119,7 @@ The integration polls your SpaceAPI endpoint (`/api/space`) every **1 minute** t
 
 ### State Updates
 
-When you toggle the switch in Home Assistant:
+When you toggle the switch in Home Assistant (only when an API key is configured):
 
 1. **Optimistic Update**: The UI updates immediately for instant feedback
 2. **API Call**: A POST request is sent to `/api/space/state`
@@ -122,7 +129,7 @@ When you toggle the switch in Home Assistant:
 
 ### Race Condition Protection
 
-The integration includes multiple layers of protection:
+The integration includes multiple layers of protection (when switching is enabled with an API key):
 - **Optimistic state**: Prevents coordinator polling from overriding user actions
 - **Operation lock**: Prevents multiple simultaneous API calls from rapid clicking
 - **Error recovery**: Automatically reverts to the real state if API calls fail
@@ -144,7 +151,7 @@ The integration includes multiple layers of protection:
 
 ### Authentication Errors
 
-- Verify your API key is correct
+- If you're using an API key, verify it is correct
 - Check that your SpaceAPI server has the correct API key configured
 - Look for authentication logs in your SpaceAPI server
 
@@ -172,7 +179,7 @@ Then restart Home Assistant and check the logs for detailed information about AP
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/space` | GET | Retrieve current space status |
-| `/api/space/state` | POST | Update space open/closed state |
+| `/api/space/state` | POST | Update space open/closed state (used only when API key is provided) |
 
 ## Device Information
 
