@@ -8,4 +8,3 @@ DOMAIN = "spaceapi_endpoint_client"
 ATTRIBUTION = "Data provided by SpaceAPI"
 CONF_HOST = "host"
 CONF_API_KEY = "api_key"
-
