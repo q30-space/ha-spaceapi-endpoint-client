@@ -75,7 +75,9 @@ async def async_unload_entry(
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     # Unload switch platform if it was loaded
     if entry.data.get(CONF_API_KEY):
-        switch_unload = await hass.config_entries.async_unload_platforms(entry, [Platform.SWITCH])
+        switch_unload = await hass.config_entries.async_unload_platforms(
+            entry, [Platform.SWITCH]
+        )
         unload_ok = unload_ok and switch_unload
     return unload_ok
 

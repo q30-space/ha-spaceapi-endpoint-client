@@ -53,7 +53,10 @@ class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
         """Initialize the switch class."""
         super().__init__(coordinator)
         self.entity_description = entity_description
-        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{entity_description.key}"
+        self._attr_unique_id = (
+            f"{coordinator.config_entry.entry_id}_"
+            f"{entity_description.key}"
+        )
         self._attr_assumed_state = False
         self._optimistic_state: bool | None = None
         self._is_switching = False  # Lock to prevent concurrent state changes
