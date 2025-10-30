@@ -4,6 +4,9 @@
 [![License][license-shield]](LICENSE)
 [![hacs][hacsbadge]][hacs]
 
+[![Validate](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/validate.yml/badge.svg)](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/validate.yml)
+[![Lint](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/lint.yml/badge.svg)](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/lint.yml)
+
 A Home Assistant integration that connects to a [SpaceAPI](https://spaceapi.io/) endpoint, allowing you to monitor and control your hackerspace's open/closed status directly from Home Assistant.
 
 ## What is SpaceAPI?
