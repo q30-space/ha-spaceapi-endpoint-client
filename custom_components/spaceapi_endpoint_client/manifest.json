@@ -2,7 +2,8 @@
     "domain": "spaceapi_endpoint_client",
     "name": "SpaceAPI Endpoint Client",
     "codeowners": [
-        "@q30-space"
+        "@q30-space",
+        "@pliski"
     ],
     "config_flow": true,
     "dependencies": [],
