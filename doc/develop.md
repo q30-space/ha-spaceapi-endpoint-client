@@ -20,3 +20,7 @@ For development/testing, use the filesystem approach:
 - Using the UI is slower but more realistic if you want to test the uninstall flow.
 
 The .storage directory is the fastest way to test the installation step.
+
+## Before push
+
+Run some checks locally with the script [scripts/ci](../scripts/ci) .

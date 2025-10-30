@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+WITH_HACS=0
+if [[ "${1:-}" == "--with-hacs" ]]; then
+    WITH_HACS=1
+fi
+
+echo "[CI] Installing Python requirements (like CI)"
+python3 -m pip install --requirement requirements.txt >/dev/null
+
+echo "[Validate] Running hassfest validation"
+if command -v docker >/dev/null 2>&1; then
+    docker run --rm \
+        -v "$(pwd)":"/workdir" \
+        ghcr.io/home-assistant/hassfest:latest .
+else
+    echo "[Validate] Docker not available; unable to run hassfest locally. CI will run it."
+fi
+
+if [[ "$WITH_HACS" -eq 1 ]]; then
+    echo "[Validate] Attempting HACS validation via Docker (best-effort)"
+    if command -v docker >/dev/null 2>&1; then
+        docker run --rm \
+            -e INPUT_CATEGORY=integration \
+            -e INPUT_IGNORE=brands \
+            -v "$(pwd)":"/github/workspace" \
+            ghcr.io/hacs/action:latest || echo "[Validate] HACS validation failed or unavailable. See CI for authoritative check."
+    else
+        echo "[Validate] Docker not available; skipping HACS validation. CI will run it."
+    fi
+else
+    echo "[Validate] Skipping HACS validation (pass --with-hacs to attempt via Docker)."
+fi
+
+echo "[Lint] Ensuring ruff is installed"
+if ! python3 -c "import ruff" >/dev/null 2>&1; then
+    python3 -m pip install --upgrade ruff >/dev/null
+fi
+
+echo "[Lint] Running: python3 -m ruff check ."
+python3 -m ruff check .
+
+echo "[Lint] Running: python3 -m ruff format . --check"
+python3 -m ruff format . --check
+
+echo "All done."
+
+
