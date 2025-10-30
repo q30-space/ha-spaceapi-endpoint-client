@@ -6,6 +6,8 @@
     "requirements": ["aiohttp", "async-timeout"],
     "dependencies": [],
     "config_flow": true,
-    "iot_class": "local_polling"
+    "iot_class": "local_polling",
+    "documentation": "https://github.com/q30-space/ha-spaceapi-endpoint-client",
+    "issue_tracker": "https://github.com/q30-space/ha-spaceapi-endpoint-client/issues"
 }
 
