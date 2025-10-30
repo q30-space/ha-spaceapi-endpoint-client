@@ -1,5 +1,12 @@
 # Tips for developers
 
+## Cut a new release
+
+In the Github repo, go to Actions → “Cut release (sync manifest version)” → Run workflow, enter a version like 0.1.3 or v0.1.3.
+
+The workflow updates custom_components/spaceapi_endpoint_client/manifest.json, commits, tags vX.Y.Z, pushes, and creates the GitHub Release.
+
+
 ## start HA
 
 Once in the devcontainer execute a local HA instance by executint the script [scripts/develop](../scripts/develop).
