@@ -22,7 +22,7 @@ ENTITY_DESCRIPTIONS = (
     SwitchEntityDescription(
         key="spaceapi_endpoint_client",
         name="Space Status",
-        icon="mdi:door-open",
+        icon="mdi:rocket",
     ),
 )
 
