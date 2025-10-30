@@ -22,7 +22,7 @@ ENTITY_DESCRIPTIONS = (
     BinarySensorEntityDescription(
         key="space_status",
         name="Space Status",
-        icon="mdi:door-open",
+        icon="mdi:rocket",
     ),
 )
 
