@@ -14,6 +14,10 @@
             "connection": "Unable to connect to the SpaceAPI server.",
             "unknown": "Unknown error occurred."
         },
+        "data": {
+            "invalid_url": "Invalid URL format. Must be a valid http:// or https:// URL.",
+            "invalid_api_key": "Invalid API key format. Must be a valid string."
+        },
         "abort": {
             "already_configured": "This SpaceAPI endpoint is already configured."
         }
