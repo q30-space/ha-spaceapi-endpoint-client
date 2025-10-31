@@ -7,7 +7,9 @@
 [![Validate](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/validate.yml/badge.svg)](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/validate.yml)
 [![Lint](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/lint.yml/badge.svg)](https://github.com/q30-space/ha-spaceapi-endpoint-client/actions/workflows/lint.yml)
 
-A Home Assistant integration that connects to a [SpaceAPI](https://spaceapi.io/) endpoint, allowing you to monitor and control your hackerspace's open/closed status directly from Home Assistant.
+A Home Assistant integration that connects to a [SpaceAPI](https://spaceapi.io/) endpoint, allowing you to monitor and control your space's open/closed status directly from Home Assistant.
+
+This is a companion app of [SpaceAPI endpoint](https://github.com/q30-space/spaceapi-endpoint) but will handle also all other spaceapi.json providing methods in read-only mode.
 
 ## What is SpaceAPI?
 
@@ -18,6 +20,7 @@ SpaceAPI is a standardized API specification used by hackerspaces, makerspaces, 
 - 🚪 **Toggle Switch** (optional) - Control your space's open/closed status when an API key is provided
 - 🔄 **Real-time Status** - Automatic polling every minute to keep the status up-to-date
 - 🔒 **Secure Authentication** (optional) - API key-based authentication for protected operations
+- 🔄 **Automatic Fallback** - Automatically falls back to direct JSON endpoint when API server is unavailable (no API key required)
 - ⚡ **Optimistic Updates** - Instant UI feedback with race condition protection
 - 🛡️ **Debounce Protection** - Prevents API spam from rapid clicking
 - 📝 **Debug Logging** - Comprehensive logging for troubleshooting
@@ -25,7 +28,7 @@ SpaceAPI is a standardized API specification used by hackerspaces, makerspaces, 
 ## Prerequisites
 
 - Home Assistant 2021.1.0 or newer
-- A [SpaceAPI endpoint](https://github.com/q30-space/spaceapi-endpoint) server (v15 specification)
+- A [SpaceAPI endpoint](https://github.com/q30-space/spaceapi-endpoint) server or an url pointing to a spaceapi.json file
 - API key for authentication (optional; not required if only monitor the status of the space)
 
 ## Installation
@@ -57,14 +60,14 @@ SpaceAPI is a standardized API specification used by hackerspaces, makerspaces, 
 2. Click the **+ Add Integration** button
 3. Search for "**SpaceAPI Endpoint Client**"
 4. Enter your configuration:
-   - **Host URL**: The base URL of your SpaceAPI endpoint (e.g., `http://localhost:8080`)
+   - **Host URL**: The base URL of your SpaceAPI endpoint or direct JSON file URL (check https://directory.spaceapi.io/)
    - **API Key** (optional): Your API authentication key. Provide it to enable switching (write access). Leave empty for read-only monitoring.
 
 ### Configuration Parameters
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| Host URL | Yes | The base URL of your SpaceAPI server |
+| Host URL | Yes | The base URL of your SpaceAPI server or direct JSON endpoint URL. Can be any valid SpaceAPI JSON endpoint (see [SpaceAPI Directory](https://directory.spaceapi.io/) for examples) |
 | API Key | No | Optional. Required to enable POST operations (switch control). |
 
 ### Behavior With and Without API Key
@@ -115,7 +118,20 @@ automation:
 
 ### Polling
 
-The integration polls your SpaceAPI endpoint (`/api/space`) every **1 minute** to check the current status of the space.
+The integration polls your SpaceAPI endpoint every **1 minute** to check the current status of the space.
+
+**Primary Endpoint**: The integration first attempts to retrieve data from `/api/space` endpoint.
+
+**Automatic Fallback**: If the `/api/space` endpoint fails (connection error, timeout, etc.) and no API key is provided, the integration automatically falls back to a direct GET request to the `host_url` you configured. This allows the integration to work with:
+- Direct SpaceAPI JSON endpoints (e.g., `https://spaceapi.example.com/spaceapi.json`)
+- Static JSON files hosted anywhere
+- Any URL that returns valid SpaceAPI JSON format
+
+This fallback only activates when:
+- No API key is configured (read-only mode)
+- The primary `/api/space` endpoint fails with a communication error
+
+If an API key is provided, the fallback is disabled to ensure secure API server communication.
 
 ### State Updates
 
@@ -148,6 +164,8 @@ The integration includes multiple layers of protection (when switching is enable
 - Check that the Host URL is correct (including `http://` or `https://`)
 - Ensure there are no firewall rules blocking the connection
 - Test the endpoint manually: `curl http://your-server/api/space`
+- If using direct JSON endpoints, verify the URL returns valid SpaceAPI JSON format
+- The integration will automatically fall back to direct `host_url` GET requests when the API server is unavailable (read-only mode only)
 
 ### Authentication Errors
 
@@ -178,14 +196,15 @@ Then restart Home Assistant and check the logs for detailed information about AP
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/space` | GET | Retrieve current space status |
+| `/api/space` | GET | Retrieve current space status (primary endpoint) |
+| `{host_url}` | GET | Fallback: Direct JSON endpoint retrieval (used when `/api/space` fails and no API key is provided) |
 | `/api/space/state` | POST | Update space open/closed state (used only when API key is provided) |
 
 ## Device Information
 
 The integration creates a device with the following information:
 - **Name**: SpaceAPI (your-url)
-- **Manufacturer**: SpaceAPI
+- **Manufacturer**: q30space
 - **Model**: SpaceAPI v15
 - **Configuration URL**: Links to your SpaceAPI endpoint
 
@@ -200,7 +219,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Credits
 
 - Built from the [Integration Blueprint][integration_blueprint] template
-- Implements the [SpaceAPI v15 specification](https://spaceapi.io/)
+- Implements the [SpaceAPI v15 specification](https://spaceapi.io/docs/)
 - Compatible with [spaceapi-endpoint](https://github.com/q30-space/spaceapi-endpoint) server
 
 ## Support
