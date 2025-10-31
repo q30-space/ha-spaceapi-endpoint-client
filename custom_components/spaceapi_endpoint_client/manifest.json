@@ -1,18 +1,18 @@
 {
-    "domain": "spaceapi_endpoint_client",
-    "name": "SpaceAPI Endpoint Client",
-    "codeowners": [
-        "@q30space",
-        "@pliski"
-    ],
-    "config_flow": true,
-    "dependencies": [],
-    "documentation": "https://github.com/q30-space/ha-spaceapi-endpoint-client",
-    "iot_class": "local_polling",
-    "issue_tracker": "https://github.com/q30-space/ha-spaceapi-endpoint-client/issues",
-    "requirements": [
-        "aiohttp",
-        "async-timeout"
-    ],
-    "version": "0.1.2"
+  "domain": "spaceapi_endpoint_client",
+  "name": "SpaceAPI Endpoint Client",
+  "codeowners": [
+    "@q30space",
+    "@pliski"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/q30-space/ha-spaceapi-endpoint-client",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/q30-space/ha-spaceapi-endpoint-client/issues",
+  "requirements": [
+    "aiohttp",
+    "async-timeout"
+  ],
+  "version": "0.1.3"
 }
