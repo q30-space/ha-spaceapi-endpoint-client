@@ -1,5 +1,8 @@
 # SpaceAPI Endpoint Client for Home Assistant
 
+
+![screenshot](doc/screenshot_500px.png)
+
 [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]](LICENSE)
 [![hacs][hacsbadge]][hacs]

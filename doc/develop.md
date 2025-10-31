@@ -31,3 +31,5 @@ The .storage directory is the fastest way to test the installation step.
 ## Before push
 
 Run some checks locally with the script [scripts/ci](../scripts/ci) .
+
+**Note:** The CI script runs hassfest validation which requires Docker. The devcontainer includes Docker-in-Docker support. If you don't have Docker available when running the CI script, you'll need to rebuild your devcontainer to enable Docker support (the first time after this change).
