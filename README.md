@@ -203,14 +203,6 @@ Then restart Home Assistant and check the logs for detailed information about AP
 | `{host_url}` | GET | Fallback: Direct JSON endpoint retrieval (used when `/api/space` fails and no API key is provided) |
 | `/api/space/state` | POST | Update space open/closed state (used only when API key is provided) |
 
-## Device Information
-
-The integration creates a device with the following information:
-- **Name**: SpaceAPI (your-url)
-- **Manufacturer**: q30space
-- **Model**: SpaceAPI v15
-- **Configuration URL**: Links to your SpaceAPI endpoint
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -223,7 +215,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built from the [Integration Blueprint][integration_blueprint] template
 - Implements the [SpaceAPI v15 specification](https://spaceapi.io/docs/)
-- Compatible with [spaceapi-endpoint](https://github.com/q30-space/spaceapi-endpoint) server
+- Companion app for [spaceapi-endpoint](https://github.com/q30-space/spaceapi-endpoint) server
 
 ## Support
 
