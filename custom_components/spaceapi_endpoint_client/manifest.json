@@ -1,5 +1,5 @@
 {
-  "domain": "spaceapi_endpoint_client",
+  "domain": "q30space",
   "name": "SpaceAPI Endpoint Client",
   "codeowners": [
     "@q30space",
