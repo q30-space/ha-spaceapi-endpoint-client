@@ -79,6 +79,9 @@ def validate_and_sanitize_host_url(host_url: str) -> str:
     return host_url.rstrip("/")
 
 
+_CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x1F\x7F-\x9F]")
+
+
 def validate_and_sanitize_api_key(api_key: str | None) -> str:
     """Validate and sanitize API key."""
     if api_key is None:
@@ -88,30 +91,26 @@ def validate_and_sanitize_api_key(api_key: str | None) -> str:
         msg = "API key must be a string"
         raise IntegrationBlueprintApiClientError(msg)
 
-    # Strip whitespace
+    # Strip surrounding whitespace; an outright empty key means "no key configured"
     api_key = api_key.strip()
-
     if not api_key:
         return ""
 
-    # Remove control characters (newlines, null bytes, etc.)
-    # Allow: alphanumeric, dash, underscore, equals sign
-    sanitized = re.sub(r"[\x00-\x1F\x7F-\x9F]", "", api_key)
+    # Reject control chars rather than silently stripping them — silent stripping
+    # produces a key that doesn't match what the user pasted, which then fails
+    # authentication with no visible cause.
+    offending = sorted({hex(ord(c)) for c in _CONTROL_CHAR_PATTERN.findall(api_key)})
+    if offending:
+        LOGGER.warning("API key contains control characters: %s", ", ".join(offending))
+        msg = "API key contains control characters"
+        raise IntegrationBlueprintApiClientError(msg)
 
-    # Check for unusual characters (but allow them for compatibility)
-    safe_pattern = re.compile(r"^[a-zA-Z0-9_\-=]+$")
-    if not safe_pattern.match(sanitized):
-        LOGGER.warning(
-            "API key contains unusual characters. "
-            "Consider using a key generated with 'openssl rand -hex 32'"
-        )
-
-    # Validate reasonable length (1-256 characters)
-    if len(sanitized) < 1 or len(sanitized) > MAX_API_KEY_LENGTH:
+    # Length check (range chosen for typical hex/base64 keys)
+    if len(api_key) > MAX_API_KEY_LENGTH:
         msg = f"API key must be between 1 and {MAX_API_KEY_LENGTH} characters"
         raise IntegrationBlueprintApiClientError(msg)
 
-    return sanitized
+    return api_key
 
 
 class IntegrationBlueprintApiClient:
@@ -131,39 +130,44 @@ class IntegrationBlueprintApiClient:
 
     async def async_get_space_state(self) -> Any:
         """Get space state from the API."""
-        # First, try the API endpoint
         try:
             return await self._api_wrapper(
                 method="get",
                 url=f"{self._host_url}/api/space",
             )
         except IntegrationBlueprintApiClientAuthenticationError:
-            # Never fallback on authentication errors
             raise
         except IntegrationBlueprintApiClientCommunicationError as exception:
-            # Only fallback if no API key is provided
-            if not self._api_key:
-                LOGGER.debug(
-                    "API endpoint /api/space failed, trying fallback to direct host_url"
+            # Fallback to a direct GET on the host URL only in read-only mode.
+            # When a key is configured the user expects API-server semantics, so
+            # we surface the original error instead of silently degrading.
+            if self._api_key:
+                raise
+            LOGGER.debug(
+                "API endpoint /api/space failed, trying fallback to direct host_url"
+            )
+            try:
+                return await self._api_wrapper(
+                    method="get",
+                    url=self._host_url,
                 )
-                try:
-                    # Fallback: try GET request directly to host_url
-                    return await self._api_wrapper(
-                        method="get",
-                        url=self._host_url,
-                    )
-                except Exception as fallback_exception:
-                    # If fallback also fails, propagate the original error
-                    # but chain it with the fallback exception for debugging
-                    raise exception from fallback_exception
-            # If API key is provided, don't fallback - raise the original error
-            raise
+            except IntegrationBlueprintApiClientError as fallback_exception:
+                msg = (
+                    f"Both /api/space ({exception}) and direct host fallback "
+                    f"({fallback_exception}) failed"
+                )
+                raise IntegrationBlueprintApiClientCommunicationError(
+                    msg
+                ) from exception
 
     async def async_set_space_state(self, *, open_state: bool) -> Any:
         """Set space state via the API."""
         if not self._api_key:
+            # Local configuration error, not a server-rejected credential. Using
+            # the auth-error class here would trigger HA's reauth flow, which is
+            # the wrong UX since the user never had a key in the first place.
             msg = "API key is required to set space state"
-            raise IntegrationBlueprintApiClientAuthenticationError(msg)
+            raise IntegrationBlueprintApiClientError(msg)
         message = "Space was switched on" if open_state else "Space was switched off"
         return await self._api_wrapper(
             method="post",

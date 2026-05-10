@@ -19,19 +19,13 @@ class IntegrationBlueprintEntity(CoordinatorEntity[BlueprintDataUpdateCoordinato
         super().__init__(coordinator)
         self._attr_unique_id = coordinator.config_entry.entry_id
 
-        # Get the host URL to use as device name fallback
         host_url = coordinator.config_entry.data.get(CONF_HOST, "Unknown")
 
-        # Try to get the space name from the API response, fallback to host URL
         device_name = f"SpaceAPI ({host_url})"
-        try:
-            if coordinator.data and isinstance(coordinator.data, dict):
-                space_name = coordinator.data.get("space")
-                if space_name and isinstance(space_name, str) and space_name.strip():
-                    device_name = space_name
-        except (AttributeError, TypeError, KeyError):
-            # Fallback to host URL if any issue occurs
-            pass
+        if isinstance(coordinator.data, dict):
+            space_name = coordinator.data.get("space")
+            if isinstance(space_name, str) and space_name.strip():
+                device_name = space_name
 
         self._attr_device_info = DeviceInfo(
             identifiers={
