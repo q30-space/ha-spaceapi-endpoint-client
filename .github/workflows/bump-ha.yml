@@ -1,0 +1,61 @@
+name: Bump Home Assistant
+
+# Owns the homeassistant + pytest-homeassistant-custom-component pins in
+# requirements.txt. Runs monthly and on demand. Dependabot is configured
+# to ignore both packages so it never fights this workflow.
+
+on:
+  schedule:
+    # First of every month at 06:00 UTC (HA releases monthly, mid-month).
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: "Bump HA pin"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Resolve latest HA + paired plugin and rewrite requirements.txt
+        id: bump
+        run: python3 scripts/bump_ha.py
+
+      - name: Install bumped requirements
+        if: steps.bump.outputs.changed == 'true'
+        run: python3 -m pip install -r requirements.txt
+
+      - name: Run tests against the bumped pins
+        if: steps.bump.outputs.changed == 'true'
+        run: python3 -m pytest -q
+
+      - name: Open pull request
+        if: steps.bump.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        env:
+          HA_VERSION: ${{ steps.bump.outputs.ha_version }}
+          PLUGIN_VERSION: ${{ steps.bump.outputs.plugin_version }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/bump-homeassistant
+          delete-branch: true
+          commit-message: "chore(deps): bump homeassistant to ${{ env.HA_VERSION }}"
+          title: "chore(deps): bump homeassistant to ${{ env.HA_VERSION }}"
+          body: |
+            Automated bump from `.github/workflows/bump-ha.yml`.
+
+            - `homeassistant==${{ env.HA_VERSION }}`
+            - `pytest-homeassistant-custom-component==${{ env.PLUGIN_VERSION }}`
+
+            Tests passed against the new pins before this PR was opened.
+            Release notes: https://www.home-assistant.io/blog/categories/release-notes/

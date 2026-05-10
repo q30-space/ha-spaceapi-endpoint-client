@@ -30,6 +30,11 @@ fixture-parentheses = false
     "PLC0415",  # local imports are fine in test helpers
     "TC002",    # don't care about TYPE_CHECKING imports in tests
 ]
+"scripts/**" = [
+    "D",        # CLI helpers don't need full docstring coverage
+    "T201",     # print is the CLI's user interface
+    "S310",     # hardcoded pypi.org URLs are safe
+]
 
 [lint.pyupgrade]
 keep-runtime-typing = true

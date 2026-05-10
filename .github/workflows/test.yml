@@ -12,20 +12,31 @@ permissions: {}
 
 jobs:
   pytest:
-    name: "Pytest"
+    name: "Pytest (${{ matrix.cell }})"
     runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cell: latest
+            python-version: "3.13"
+            requirements: requirements.txt
+          - cell: floor
+            python-version: "3.12"
+            requirements: requirements-floor.txt
     steps:
       - name: Checkout the repository
         uses: actions/checkout@ff7abcd0c3c05ccf6adc123a8cd1fd4fb30fb493 # v5.0.0
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
+          cache-dependency-path: ${{ matrix.requirements }}
 
       - name: Install requirements
-        run: python3 -m pip install -r requirements.txt
+        run: python3 -m pip install -r ${{ matrix.requirements }}
 
       - name: Run tests
         run: python3 -m pytest -q

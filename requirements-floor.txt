@@ -1,0 +1,13 @@
+# Floor pins used by the "floor" cell of the CI matrix in
+# .github/workflows/test.yml. These must stay in lockstep with
+#   - manifest.json   "min_ha_version"
+#   - hacs.json       "homeassistant"
+# Update them only when raising the declared minimum HA version.
+#
+# To find the pytest-homeassistant-custom-component version paired
+# with a given HA release, see CONTRIBUTING.md ("When to raise the floor").
+colorlog==6.10.1
+homeassistant==2024.10.0
+pip>=21.3.1
+pytest-homeassistant-custom-component==0.13.171
+ruff==0.14.3
