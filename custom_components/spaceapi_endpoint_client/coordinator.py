@@ -8,20 +8,20 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import (
-    IntegrationBlueprintApiClientAuthenticationError,
-    IntegrationBlueprintApiClientError,
+    SpaceApiClientAuthenticationError,
+    SpaceApiClientError,
 )
 
 
 # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
-class BlueprintDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+class SpaceApiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Class to manage fetching data from the API."""
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Update data via library."""
         try:
             return await self.config_entry.runtime_data.client.async_get_space_state()
-        except IntegrationBlueprintApiClientAuthenticationError as exception:
-            raise ConfigEntryAuthFailed(exception) from exception
-        except IntegrationBlueprintApiClientError as exception:
-            raise UpdateFailed(exception) from exception
+        except SpaceApiClientAuthenticationError as exception:
+            raise ConfigEntryAuthFailed(str(exception)) from exception
+        except SpaceApiClientError as exception:
+            raise UpdateFailed(str(exception)) from exception

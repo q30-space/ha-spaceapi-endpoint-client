@@ -8,15 +8,16 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import LOGGER
-from .entity import IntegrationBlueprintEntity
+from .api import SpaceApiClientError
+from .const import API_SETTLE_DELAY, LOGGER
+from .entity import SpaceApiEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .coordinator import BlueprintDataUpdateCoordinator
-    from .data import IntegrationBlueprintConfigEntry
+    from .coordinator import SpaceApiDataUpdateCoordinator
+    from .data import SpaceApiConfigEntry
 
 ENTITY_DESCRIPTIONS = (
     SwitchEntityDescription(
@@ -29,12 +30,12 @@ ENTITY_DESCRIPTIONS = (
 
 async def async_setup_entry(
     hass: HomeAssistant,  # noqa: ARG001 Unused function argument: `hass`
-    entry: IntegrationBlueprintConfigEntry,
+    entry: SpaceApiConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the switch platform."""
     async_add_entities(
-        IntegrationBlueprintSwitch(
+        SpaceApiSwitch(
             coordinator=entry.runtime_data.coordinator,
             entity_description=entity_description,
         )
@@ -42,12 +43,12 @@ async def async_setup_entry(
     )
 
 
-class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
-    """spaceapi_endpoint_client switch class."""
+class SpaceApiSwitch(SpaceApiEntity, SwitchEntity):
+    """Switch that toggles the space's open/closed state via the SpaceAPI."""
 
     def __init__(
         self,
-        coordinator: BlueprintDataUpdateCoordinator,
+        coordinator: SpaceApiDataUpdateCoordinator,
         entity_description: SwitchEntityDescription,
     ) -> None:
         """Initialize the switch class."""
@@ -58,94 +59,52 @@ class IntegrationBlueprintSwitch(IntegrationBlueprintEntity, SwitchEntity):
         )
         self._attr_assumed_state = False
         self._optimistic_state: bool | None = None
-        self._is_switching = False  # Lock to prevent concurrent state changes
+        self._lock = asyncio.Lock()
 
     @property
     def is_on(self) -> bool:
         """Return true if the switch is on."""
-        # Use optimistic state if available, otherwise use coordinator data
         if self._optimistic_state is not None:
             return self._optimistic_state
         return self.coordinator.data.get("state", {}).get("open", False)
 
     async def async_turn_on(self, **_: Any) -> None:
         """Turn on the switch."""
-        # Check if already switching to prevent rapid-fire clicks
-        if self._is_switching:
-            LOGGER.debug(
-                "Ignoring turn_on request - switch operation already in progress"
-            )
-            return
-
-        # Set lock to prevent concurrent operations
-        self._is_switching = True
-
-        # Set optimistic state immediately for responsive UI
-        self._optimistic_state = True
-        self.async_write_ha_state()
-
-        try:
-            # Send the API request
-            LOGGER.debug("Sending POST request to open space (state=True)")
-            await (
-                self.coordinator.config_entry.runtime_data.client.async_set_space_state(
-                    open_state=True
-                )
-            )
-            LOGGER.debug("POST request to open space completed successfully")
-            # Wait a bit for the API to process the change
-            await asyncio.sleep(0.5)
-            # Clear optimistic state and refresh from server
-            self._optimistic_state = None
-            await self.coordinator.async_request_refresh()
-        except Exception as err:
-            # If API call fails, revert optimistic state and refresh
-            LOGGER.error("Failed to send POST request to open space: %s", err)
-            self._optimistic_state = None
-            await self.coordinator.async_request_refresh()
-            msg = f"Failed to turn on space: {err}"
-            raise HomeAssistantError(msg) from err
-        finally:
-            # Always release the lock
-            self._is_switching = False
+        await self._async_set_state(open_state=True)
 
     async def async_turn_off(self, **_: Any) -> None:
         """Turn off the switch."""
-        # Check if already switching to prevent rapid-fire clicks
-        if self._is_switching:
+        await self._async_set_state(open_state=False)
+
+    async def _async_set_state(self, *, open_state: bool) -> None:
+        """Send a state change to the API with optimistic UI + debounce."""
+        verb = "open" if open_state else "close"
+
+        if self._lock.locked():
             LOGGER.debug(
-                "Ignoring turn_off request - switch operation already in progress"
+                "Ignoring turn_%s request - switch operation already in progress",
+                "on" if open_state else "off",
             )
             return
 
-        # Set lock to prevent concurrent operations
-        self._is_switching = True
+        client = self.coordinator.config_entry.runtime_data.client
 
-        # Set optimistic state immediately for responsive UI
-        self._optimistic_state = False
-        self.async_write_ha_state()
+        async with self._lock:
+            self._optimistic_state = open_state
+            self.async_write_ha_state()
 
-        try:
-            # Send the API request
-            LOGGER.debug("Sending POST request to close space (state=False)")
-            await (
-                self.coordinator.config_entry.runtime_data.client.async_set_space_state(
-                    open_state=False
+            try:
+                LOGGER.debug(
+                    "Sending POST request to %s space (state=%s)", verb, open_state
                 )
-            )
-            LOGGER.debug("POST request to close space completed successfully")
-            # Wait a bit for the API to process the change
-            await asyncio.sleep(0.5)
-            # Clear optimistic state and refresh from server
-            self._optimistic_state = None
-            await self.coordinator.async_request_refresh()
-        except Exception as err:
-            # If API call fails, revert optimistic state and refresh
-            LOGGER.error("Failed to send POST request to close space: %s", err)
-            self._optimistic_state = None
-            await self.coordinator.async_request_refresh()
-            msg = f"Failed to turn off space: {err}"
-            raise HomeAssistantError(msg) from err
-        finally:
-            # Always release the lock
-            self._is_switching = False
+                await client.async_set_space_state(open_state=open_state)
+                LOGGER.debug("POST request to %s space completed successfully", verb)
+                await asyncio.sleep(API_SETTLE_DELAY)
+                self._optimistic_state = None
+                await self.coordinator.async_request_refresh()
+            except SpaceApiClientError as err:
+                LOGGER.error("Failed to send POST request to %s space: %s", verb, err)
+                self._optimistic_state = None
+                await self.coordinator.async_request_refresh()
+                msg = f"Failed to turn {'on' if open_state else 'off'} space: {err}"
+                raise HomeAssistantError(msg) from err

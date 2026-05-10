@@ -7,7 +7,6 @@ https://github.com/q30-space/ha-spaceapi-endpoint-client
 
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
@@ -15,19 +14,19 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import (
-    IntegrationBlueprintApiClient,
-    IntegrationBlueprintApiClientError,
+    SpaceApiClient,
+    SpaceApiClientError,
     validate_and_sanitize_api_key,
     validate_and_sanitize_host_url,
 )
-from .const import CONF_API_KEY, CONF_HOST, DOMAIN, LOGGER
-from .coordinator import BlueprintDataUpdateCoordinator
-from .data import IntegrationBlueprintData
+from .const import CONF_API_KEY, CONF_HOST, DOMAIN, LOGGER, SCAN_INTERVAL
+from .coordinator import SpaceApiDataUpdateCoordinator
+from .data import SpaceApiData
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
 
-    from .data import IntegrationBlueprintConfigEntry
+    from .data import SpaceApiConfigEntry
 
 
 def _platforms_for(entry_data: dict) -> list[Platform]:
@@ -41,18 +40,18 @@ def _platforms_for(entry_data: dict) -> list[Platform]:
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: IntegrationBlueprintConfigEntry,
+    entry: SpaceApiConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    coordinator = BlueprintDataUpdateCoordinator(
+    coordinator = SpaceApiDataUpdateCoordinator(
         hass=hass,
         logger=LOGGER,
         name=DOMAIN,
-        update_interval=timedelta(minutes=1),
+        update_interval=SCAN_INTERVAL,
         config_entry=entry,
     )
-    entry.runtime_data = IntegrationBlueprintData(
-        client=IntegrationBlueprintApiClient(
+    entry.runtime_data = SpaceApiData(
+        client=SpaceApiClient(
             host_url=entry.data[CONF_HOST],
             session=async_get_clientsession(hass),
             api_key=entry.data.get(CONF_API_KEY),
@@ -75,7 +74,7 @@ async def async_setup_entry(
 
 async def async_unload_entry(
     hass: HomeAssistant,
-    entry: IntegrationBlueprintConfigEntry,
+    entry: SpaceApiConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
     return await hass.config_entries.async_unload_platforms(
@@ -85,7 +84,7 @@ async def async_unload_entry(
 
 async def async_reload_entry(
     hass: HomeAssistant,
-    entry: IntegrationBlueprintConfigEntry,
+    entry: SpaceApiConfigEntry,
 ) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)
@@ -96,7 +95,7 @@ CURRENT_ENTRY_VERSION = 2
 
 async def async_migrate_entry(
     hass: HomeAssistant,
-    entry: IntegrationBlueprintConfigEntry,
+    entry: SpaceApiConfigEntry,
 ) -> bool:
     """Migrate old entries to the latest schema."""
     if entry.version > CURRENT_ENTRY_VERSION:
@@ -111,7 +110,7 @@ async def async_migrate_entry(
                     entry.data.get(CONF_API_KEY)
                 ),
             }
-        except IntegrationBlueprintApiClientError:
+        except SpaceApiClientError:
             LOGGER.exception("Failed to migrate config entry %s to v2", entry.entry_id)
             return False
         hass.config_entries.async_update_entry(entry, data=new_data, version=2)

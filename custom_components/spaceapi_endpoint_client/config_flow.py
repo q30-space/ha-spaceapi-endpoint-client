@@ -1,4 +1,4 @@
-"""Adds config flow for Blueprint."""
+"""Config flow for the SpaceAPI Endpoint Client integration."""
 
 from __future__ import annotations
 
@@ -9,18 +9,18 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from slugify import slugify
 
 from .api import (
-    IntegrationBlueprintApiClient,
-    IntegrationBlueprintApiClientAuthenticationError,
-    IntegrationBlueprintApiClientCommunicationError,
-    IntegrationBlueprintApiClientError,
+    SpaceApiClient,
+    SpaceApiClientAuthenticationError,
+    SpaceApiClientCommunicationError,
+    SpaceApiClientError,
     validate_and_sanitize_api_key,
     validate_and_sanitize_host_url,
 )
 from .const import CONF_API_KEY, CONF_HOST, DOMAIN, LOGGER
 
 
-class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Blueprint."""
+class SpaceApiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+    """Config flow for the SpaceAPI Endpoint Client integration."""
 
     VERSION = 2
 
@@ -37,14 +37,14 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 sanitized_host = validate_and_sanitize_host_url(
                     user_input.get(CONF_HOST, "")
                 )
-            except IntegrationBlueprintApiClientError:
+            except SpaceApiClientError:
                 _errors[CONF_HOST] = "invalid_url"
 
             try:
                 sanitized_key = validate_and_sanitize_api_key(
                     user_input.get(CONF_API_KEY)
                 )
-            except IntegrationBlueprintApiClientError:
+            except SpaceApiClientError:
                 _errors[CONF_API_KEY] = "invalid_api_key"
 
             if not _errors and sanitized_host is not None:
@@ -62,14 +62,14 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_API_KEY: sanitized_key,
                         },
                     )
-                except IntegrationBlueprintApiClientAuthenticationError as exception:
-                    LOGGER.warning(exception)
+                except SpaceApiClientAuthenticationError as exception:
+                    LOGGER.warning("Auth failed during config flow: %s", exception)
                     _errors["base"] = "auth"
-                except IntegrationBlueprintApiClientCommunicationError as exception:
-                    LOGGER.error(exception)
+                except SpaceApiClientCommunicationError as exception:
+                    LOGGER.error("Connection failed during config flow: %s", exception)
                     _errors["base"] = "connection"
-                except IntegrationBlueprintApiClientError as exception:
-                    LOGGER.exception(exception)
+                except SpaceApiClientError:
+                    LOGGER.exception("Unexpected error during config flow")
                     _errors["base"] = "unknown"
 
         return self.async_show_form(
@@ -101,7 +101,7 @@ class BlueprintFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self, host_url: str, api_key: str | None = None
     ) -> None:
         """Validate credentials."""
-        client = IntegrationBlueprintApiClient(
+        client = SpaceApiClient(
             host_url=host_url,
             session=async_create_clientsession(self.hass),
             api_key=api_key or "",

@@ -1,4 +1,4 @@
-"""BlueprintEntity class."""
+"""Base entity for the SpaceAPI Endpoint Client integration."""
 
 from __future__ import annotations
 
@@ -6,15 +6,15 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import ATTRIBUTION, CONF_HOST
-from .coordinator import BlueprintDataUpdateCoordinator
+from .coordinator import SpaceApiDataUpdateCoordinator
 
 
-class IntegrationBlueprintEntity(CoordinatorEntity[BlueprintDataUpdateCoordinator]):
-    """BlueprintEntity class."""
+class SpaceApiEntity(CoordinatorEntity[SpaceApiDataUpdateCoordinator]):
+    """Common base for all SpaceAPI entities."""
 
     _attr_attribution = ATTRIBUTION
 
-    def __init__(self, coordinator: BlueprintDataUpdateCoordinator) -> None:
+    def __init__(self, coordinator: SpaceApiDataUpdateCoordinator) -> None:
         """Initialize."""
         super().__init__(coordinator)
         self._attr_unique_id = coordinator.config_entry.entry_id
