@@ -24,7 +24,7 @@ from custom_components.spaceapi_endpoint_client.const import (
 def mock_get_space_state():
     """Patch the API call so the flow's _test_credentials succeeds by default."""
     with patch(
-        "custom_components.spaceapi_endpoint_client.config_flow.SpaceApiClient.async_get_space_state",
+        "custom_components.spaceapi_endpoint_client.api.SpaceApiClient.async_get_space_state",
         AsyncMock(return_value={"state": {"open": True}, "space": "Test"}),
     ) as mock:
         yield mock
@@ -80,7 +80,7 @@ async def test_user_flow_invalid_api_key_control_chars(
 
 async def test_user_flow_auth_error(hass: HomeAssistant) -> None:
     with patch(
-        "custom_components.spaceapi_endpoint_client.config_flow.SpaceApiClient.async_get_space_state",
+        "custom_components.spaceapi_endpoint_client.api.SpaceApiClient.async_get_space_state",
         AsyncMock(side_effect=SpaceApiClientAuthenticationError("nope")),
     ):
         result = await hass.config_entries.flow.async_init(
@@ -98,7 +98,7 @@ async def test_user_flow_auth_error(hass: HomeAssistant) -> None:
 
 async def test_user_flow_connection_error(hass: HomeAssistant) -> None:
     with patch(
-        "custom_components.spaceapi_endpoint_client.config_flow.SpaceApiClient.async_get_space_state",
+        "custom_components.spaceapi_endpoint_client.api.SpaceApiClient.async_get_space_state",
         AsyncMock(side_effect=SpaceApiClientCommunicationError("down")),
     ):
         result = await hass.config_entries.flow.async_init(
@@ -118,7 +118,7 @@ async def test_user_flow_already_configured(
     MockConfigEntry(
         domain=DOMAIN,
         data={CONF_HOST: "https://example.com", CONF_API_KEY: ""},
-        unique_id="example-com",
+        unique_id="https-example-com",
     ).add_to_hass(hass)
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -138,7 +138,7 @@ async def test_reauth_flow_updates_api_key(
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={CONF_HOST: "https://example.com", CONF_API_KEY: "old"},
-        unique_id="example-com",
+        unique_id="https-example-com",
     )
     entry.add_to_hass(hass)
 
@@ -149,6 +149,7 @@ async def test_reauth_flow_updates_api_key(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_API_KEY: "newkey"}
     )
+    await hass.async_block_till_done()
     assert result["type"] is data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
     assert entry.data[CONF_API_KEY] == "newkey"
@@ -161,7 +162,7 @@ async def test_reconfigure_flow_updates_host_and_key(
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={CONF_HOST: "https://example.com", CONF_API_KEY: ""},
-        unique_id="example-com",
+        unique_id="https-example-com",
     )
     entry.add_to_hass(hass)
 
@@ -173,6 +174,7 @@ async def test_reconfigure_flow_updates_host_and_key(
         result["flow_id"],
         user_input={CONF_HOST: "https://example.com", CONF_API_KEY: "abc123"},
     )
+    await hass.async_block_till_done()
     assert result["type"] is data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[CONF_API_KEY] == "abc123"

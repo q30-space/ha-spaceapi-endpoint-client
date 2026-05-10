@@ -14,20 +14,23 @@ from custom_components.spaceapi_endpoint_client.const import (
     DOMAIN,
 )
 
+API_PATCH_TARGET = (
+    "custom_components.spaceapi_endpoint_client"
+    ".api.SpaceApiClient.async_get_space_state"
+)
+
 
 @pytest.fixture
 def fake_space_state() -> dict:
     return {"state": {"open": False}, "space": "Test Hackerspace"}
 
 
-async def _make_entry(
-    hass: HomeAssistant, *, api_key: str = "", version: int = 2
-) -> MockConfigEntry:
+def _make_entry(hass: HomeAssistant, *, api_key: str = "") -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
-        version=version,
+        version=2,
         data={CONF_HOST: "https://example.com", CONF_API_KEY: api_key},
-        unique_id="example-com",
+        unique_id="https-example-com",
     )
     entry.add_to_hass(hass)
     return entry
@@ -36,40 +39,25 @@ async def _make_entry(
 async def test_setup_loads_only_binary_sensor_without_api_key(
     hass: HomeAssistant, fake_space_state: dict
 ) -> None:
-    entry = await _make_entry(hass)
-    with patch(
-        "custom_components.spaceapi_endpoint_client.SpaceApiClient.async_get_space_state",
-        AsyncMock(return_value=fake_space_state),
-    ):
+    entry = _make_entry(hass)
+    with patch(API_PATCH_TARGET, AsyncMock(return_value=fake_space_state)):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-    assert hass.states.get("binary_sensor.test_hackerspace_space_status") is not None
-    assert hass.states.get("switch.test_hackerspace_space_status") is None
+    assert hass.states.async_entity_ids("binary_sensor")
+    assert not hass.states.async_entity_ids("switch")
 
 
 async def test_setup_loads_switch_when_api_key_present(
     hass: HomeAssistant, fake_space_state: dict
 ) -> None:
-    entry = await _make_entry(hass, api_key="secret123")
-    with patch(
-        "custom_components.spaceapi_endpoint_client.SpaceApiClient.async_get_space_state",
-        AsyncMock(return_value=fake_space_state),
-    ):
+    entry = _make_entry(hass, api_key="secret123")
+    with patch(API_PATCH_TARGET, AsyncMock(return_value=fake_space_state)):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-    # Both platforms loaded; entity_id resolution depends on the device name from
-    # fake_space_state ("Test Hackerspace") so we just assert the platforms ran.
-    assert (
-        any(
-            ent.domain == "switch"
-            for ent in hass.config_entries.async_entries(DOMAIN)[
-                0
-            ].runtime_data.coordinator.async_contexts()  # type: ignore[attr-defined]
-        )
-        or hass.config_entries.async_get_entry(entry.entry_id).state.recoverable
-    )  # type: ignore[union-attr]
+    assert hass.states.async_entity_ids("binary_sensor")
+    assert hass.states.async_entity_ids("switch")
 
 
 async def test_migration_v1_to_v2_sanitizes_data(
@@ -80,14 +68,11 @@ async def test_migration_v1_to_v2_sanitizes_data(
         domain=DOMAIN,
         version=1,
         data={CONF_HOST: "  https://example.com/  ", CONF_API_KEY: ""},
-        unique_id="example-com",
+        unique_id="https-example-com",
     )
     entry.add_to_hass(hass)
 
-    with patch(
-        "custom_components.spaceapi_endpoint_client.SpaceApiClient.async_get_space_state",
-        AsyncMock(return_value=fake_space_state),
-    ):
+    with patch(API_PATCH_TARGET, AsyncMock(return_value=fake_space_state)):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
