@@ -7,6 +7,20 @@
                     "host": "Host URL",
                     "api_key": "API Key (Optional - Required only to update the space status)"
                 }
+            },
+            "reconfigure": {
+                "description": "Update the SpaceAPI endpoint URL or API key. Adding an API key enables the toggle switch; removing it returns the integration to read-only mode.",
+                "data": {
+                    "host": "Host URL",
+                    "api_key": "API Key (Optional - Required only to update the space status)"
+                }
+            },
+            "reauth_confirm": {
+                "title": "Re-authenticate with SpaceAPI",
+                "description": "The current API key for {host} was rejected. Enter a new API key.",
+                "data": {
+                    "api_key": "API Key"
+                }
             }
         },
         "error": {
@@ -17,7 +31,10 @@
             "invalid_api_key": "Invalid API key format. Must be a valid string."
         },
         "abort": {
-            "already_configured": "This SpaceAPI endpoint is already configured."
+            "already_configured": "This SpaceAPI endpoint is already configured.",
+            "reauth_successful": "Re-authentication was successful.",
+            "reconfigure_successful": "Reconfiguration was successful.",
+            "reconfigure_unique_id_mismatch": "The new host URL conflicts with another configured SpaceAPI endpoint."
         }
     }
 }
