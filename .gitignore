@@ -16,3 +16,4 @@ stash/*
 # Home Assistant configuration
 config/*
 !config/configuration.yaml
+doc/chat/
