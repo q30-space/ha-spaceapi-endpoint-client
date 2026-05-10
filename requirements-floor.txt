@@ -8,6 +8,10 @@
 # with a given HA release, see CONTRIBUTING.md ("When to raise the floor").
 colorlog==6.10.1
 homeassistant==2024.10.0
+# josepy 2.0 removed ComparableX509, breaking the acme version that
+# HA 2024.10.0 transitively requires. Cap until the floor moves past
+# the HA release that bumped acme to 4.x.
+josepy<2.0
 pip>=21.3.1
 pytest-homeassistant-custom-component==0.13.171
 ruff==0.14.3

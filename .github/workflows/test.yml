@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
           - cell: latest
-            python-version: "3.13"
+            python-version: "3.14"
             requirements: requirements.txt
           - cell: floor
             python-version: "3.12"
