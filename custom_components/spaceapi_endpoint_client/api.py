@@ -9,7 +9,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 import aiohttp
-import async_timeout
 
 from .const import LOGGER
 
@@ -191,7 +190,7 @@ class SpaceApiClient:
     ) -> Any:
         """Get information from the API."""
         try:
-            async with async_timeout.timeout(10):
+            async with asyncio.timeout(10):
                 response = await self._session.request(
                     method=method,
                     url=url,
