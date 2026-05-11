@@ -25,9 +25,7 @@ if _HA_VERSION_TUPLE < (2025, 1, 0):
     _real_enumerate = threading.enumerate
 
     def _filtered_enumerate() -> list[threading.Thread]:
-        return [
-            t for t in _real_enumerate() if "_run_safe_shutdown_loop" not in t.name
-        ]
+        return [t for t in _real_enumerate() if "_run_safe_shutdown_loop" not in t.name]
 
     threading.enumerate = _filtered_enumerate
 
