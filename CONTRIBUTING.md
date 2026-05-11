@@ -21,8 +21,10 @@ respectively. (Older HA releases pull in transitive packages like
 
 Bump `min_ha_version` (and the three places that mirror it) only when our
 own code requires a feature added in a newer HA release. The current
-floor is `2024.10.0`, set when the integration adopted the
-`DataUpdateCoordinator(config_entry=...)` constructor argument.
+floor is `2024.12.0`, set when the config flow adopted
+`ConfigFlow._get_reauth_entry()` for reauth handling. The previous floor
+of 2024.10.0 was nominally chosen for `DataUpdateCoordinator(config_entry=...)`
+but that kwarg actually landed in HA 2024.11.
 
 To raise the floor:
 
