@@ -85,6 +85,9 @@ class SpaceApiFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 api_key_default=(user_input or {}).get(CONF_API_KEY, vol.UNDEFINED),
             ),
             errors=errors,
+            description_placeholders={
+                "docs_url": "https://github.com/q30-space/ha-spaceapi-endpoint-client",
+            },
         )
 
     async def async_step_reconfigure(
