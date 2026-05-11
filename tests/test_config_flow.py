@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant import config_entries, data_entry_flow
-from homeassistant.const import __version__ as _ha_version
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -18,20 +17,6 @@ from custom_components.spaceapi_endpoint_client.const import (
     CONF_API_KEY,
     CONF_HOST,
     DOMAIN,
-)
-
-_HA_VERSION_TUPLE = tuple(int(p) for p in _ha_version.split(".")[:3])
-
-# Every config-flow test that reaches async_configure with valid input creates
-# an aiohttp ClientSession via async_get_clientsession(hass), which spawns HA's
-# _run_safe_shutdown_loop executor thread. pytest-homeassistant-custom-component
-# 0.13.190 (paired with our HA 2024.12.0 floor) enforces a strict lingering-
-# thread check at teardown before the hass fixture stops HA, so the thread is
-# still alive at check time. Newer plugin versions paired with the "latest"
-# cell do not enforce this, so the tests still run there.
-pytestmark = pytest.mark.skipif(
-    _HA_VERSION_TUPLE < (2025, 1, 0),
-    reason="plugin 0.13.190 lingering-thread check fires on HA executor",
 )
 
 
