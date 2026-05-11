@@ -8,11 +8,10 @@
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/q30-space/ha-spaceapi-endpoint-client",
+  "integration_type": "service",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/q30-space/ha-spaceapi-endpoint-client/issues",
-  "requirements": [
-    "aiohttp",
-    "async-timeout"
-  ],
+  "min_ha_version": "2024.12.0",
+  "requirements": [],
   "version": "0.1.3"
 }

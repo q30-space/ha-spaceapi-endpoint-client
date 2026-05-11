@@ -9,17 +9,17 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.loader import Integration
 
-    from .api import IntegrationBlueprintApiClient
-    from .coordinator import BlueprintDataUpdateCoordinator
+    from .api import SpaceApiClient
+    from .coordinator import SpaceApiDataUpdateCoordinator
 
 
-type IntegrationBlueprintConfigEntry = ConfigEntry[IntegrationBlueprintData]
+type SpaceApiConfigEntry = ConfigEntry[SpaceApiData]
 
 
 @dataclass
-class IntegrationBlueprintData:
-    """Data for the Blueprint integration."""
+class SpaceApiData:
+    """Runtime data shared across the SpaceAPI integration."""
 
-    client: IntegrationBlueprintApiClient
-    coordinator: BlueprintDataUpdateCoordinator
+    client: SpaceApiClient
+    coordinator: SpaceApiDataUpdateCoordinator
     integration: Integration

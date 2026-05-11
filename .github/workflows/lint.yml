@@ -22,10 +22,13 @@ jobs:
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.13"
-          cache: "pip"
 
-      - name: Install requirements
-        run: python3 -m pip install -r requirements.txt
+      - name: Install ruff
+        # Lint only needs ruff; pulling the full requirements.txt drags in
+        # a HA release that may not even support the runner's Python.
+        run: |
+          version=$(grep '^ruff==' requirements.txt | cut -d= -f3)
+          python3 -m pip install "ruff==${version}"
 
       - name: Lint
         run: python3 -m ruff check .

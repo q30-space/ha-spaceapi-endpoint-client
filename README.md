@@ -30,7 +30,7 @@ SpaceAPI is a standardized API specification used by hackerspaces, makerspaces, 
 
 ## Prerequisites
 
-- Home Assistant 2021.1.0 or newer
+- Home Assistant 2024.10.0 or newer
 - A [SpaceAPI endpoint](https://github.com/q30-space/spaceapi-endpoint) server or an url pointing to a spaceapi.json file
 - API key for authentication (optional; not required if only monitor the status of the space)
 

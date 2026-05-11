@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 import socket
 from typing import Any
 from urllib.parse import urlparse
 
 import aiohttp
-import async_timeout
 
 from .const import LOGGER
 
@@ -16,18 +16,18 @@ from .const import LOGGER
 MAX_API_KEY_LENGTH = 256
 
 
-class IntegrationBlueprintApiClientError(Exception):
+class SpaceApiClientError(Exception):
     """Exception to indicate a general API error."""
 
 
-class IntegrationBlueprintApiClientCommunicationError(
-    IntegrationBlueprintApiClientError,
+class SpaceApiClientCommunicationError(
+    SpaceApiClientError,
 ):
     """Exception to indicate a communication error."""
 
 
-class IntegrationBlueprintApiClientAuthenticationError(
-    IntegrationBlueprintApiClientError,
+class SpaceApiClientAuthenticationError(
+    SpaceApiClientError,
 ):
     """Exception to indicate an authentication error."""
 
@@ -36,7 +36,7 @@ def _verify_response_or_raise(response: aiohttp.ClientResponse) -> None:
     """Verify that the response is valid."""
     if response.status in (401, 403):
         msg = "Invalid credentials"
-        raise IntegrationBlueprintApiClientAuthenticationError(
+        raise SpaceApiClientAuthenticationError(
             msg,
         )
     response.raise_for_status()
@@ -46,21 +46,21 @@ def validate_and_sanitize_host_url(host_url: str) -> str:
     """Validate and sanitize host URL."""
     if not host_url or not isinstance(host_url, str):
         msg = "Host URL must be a non-empty string"
-        raise IntegrationBlueprintApiClientError(msg)
+        raise SpaceApiClientError(msg)
 
     # Strip whitespace
     host_url = host_url.strip()
 
     if not host_url:
         msg = "Host URL cannot be empty"
-        raise IntegrationBlueprintApiClientError(msg)
+        raise SpaceApiClientError(msg)
 
     # Parse URL
     try:
         parsed = urlparse(host_url)
     except Exception as exception:
         msg = f"Invalid URL format: {exception}"
-        raise IntegrationBlueprintApiClientError(msg) from exception
+        raise SpaceApiClientError(msg) from exception
 
     # Validate scheme - only allow http and https
     if parsed.scheme not in ("http", "https"):
@@ -68,15 +68,18 @@ def validate_and_sanitize_host_url(host_url: str) -> str:
             msg = f"URL scheme must be http or https, got: {parsed.scheme}"
         else:
             msg = "URL must include a scheme (http:// or https://)"
-        raise IntegrationBlueprintApiClientError(msg)
+        raise SpaceApiClientError(msg)
 
     # Validate netloc (domain) exists
     if not parsed.netloc:
         msg = "URL must include a valid domain"
-        raise IntegrationBlueprintApiClientError(msg)
+        raise SpaceApiClientError(msg)
 
     # Strip trailing slashes
     return host_url.rstrip("/")
+
+
+_CONTROL_CHAR_PATTERN = re.compile(r"[\x00-\x1F\x7F-\x9F]")
 
 
 def validate_and_sanitize_api_key(api_key: str | None) -> str:
@@ -86,35 +89,31 @@ def validate_and_sanitize_api_key(api_key: str | None) -> str:
 
     if not isinstance(api_key, str):
         msg = "API key must be a string"
-        raise IntegrationBlueprintApiClientError(msg)
+        raise SpaceApiClientError(msg)
 
-    # Strip whitespace
+    # Strip surrounding whitespace; an outright empty key means "no key configured"
     api_key = api_key.strip()
-
     if not api_key:
         return ""
 
-    # Remove control characters (newlines, null bytes, etc.)
-    # Allow: alphanumeric, dash, underscore, equals sign
-    sanitized = re.sub(r"[\x00-\x1F\x7F-\x9F]", "", api_key)
+    # Reject control chars rather than silently stripping them — silent stripping
+    # produces a key that doesn't match what the user pasted, which then fails
+    # authentication with no visible cause.
+    offending = sorted({hex(ord(c)) for c in _CONTROL_CHAR_PATTERN.findall(api_key)})
+    if offending:
+        LOGGER.warning("API key contains control characters: %s", ", ".join(offending))
+        msg = "API key contains control characters"
+        raise SpaceApiClientError(msg)
 
-    # Check for unusual characters (but allow them for compatibility)
-    safe_pattern = re.compile(r"^[a-zA-Z0-9_\-=]+$")
-    if not safe_pattern.match(sanitized):
-        LOGGER.warning(
-            "API key contains unusual characters. "
-            "Consider using a key generated with 'openssl rand -hex 32'"
-        )
-
-    # Validate reasonable length (1-256 characters)
-    if len(sanitized) < 1 or len(sanitized) > MAX_API_KEY_LENGTH:
+    # Length check (range chosen for typical hex/base64 keys)
+    if len(api_key) > MAX_API_KEY_LENGTH:
         msg = f"API key must be between 1 and {MAX_API_KEY_LENGTH} characters"
-        raise IntegrationBlueprintApiClientError(msg)
+        raise SpaceApiClientError(msg)
 
-    return sanitized
+    return api_key
 
 
-class IntegrationBlueprintApiClient:
+class SpaceApiClient:
     """SpaceAPI Client."""
 
     def __init__(
@@ -131,39 +130,42 @@ class IntegrationBlueprintApiClient:
 
     async def async_get_space_state(self) -> Any:
         """Get space state from the API."""
-        # First, try the API endpoint
         try:
             return await self._api_wrapper(
                 method="get",
                 url=f"{self._host_url}/api/space",
             )
-        except IntegrationBlueprintApiClientAuthenticationError:
-            # Never fallback on authentication errors
+        except SpaceApiClientAuthenticationError:
             raise
-        except IntegrationBlueprintApiClientCommunicationError as exception:
-            # Only fallback if no API key is provided
-            if not self._api_key:
-                LOGGER.debug(
-                    "API endpoint /api/space failed, trying fallback to direct host_url"
+        except SpaceApiClientCommunicationError as exception:
+            # Fallback to a direct GET on the host URL only in read-only mode.
+            # When a key is configured the user expects API-server semantics, so
+            # we surface the original error instead of silently degrading.
+            if self._api_key:
+                raise
+            LOGGER.debug(
+                "API endpoint /api/space failed, trying fallback to direct host_url"
+            )
+            try:
+                return await self._api_wrapper(
+                    method="get",
+                    url=self._host_url,
                 )
-                try:
-                    # Fallback: try GET request directly to host_url
-                    return await self._api_wrapper(
-                        method="get",
-                        url=self._host_url,
-                    )
-                except Exception as fallback_exception:
-                    # If fallback also fails, propagate the original error
-                    # but chain it with the fallback exception for debugging
-                    raise exception from fallback_exception
-            # If API key is provided, don't fallback - raise the original error
-            raise
+            except SpaceApiClientError as fallback_exception:
+                msg = (
+                    f"Both /api/space ({exception}) and direct host fallback "
+                    f"({fallback_exception}) failed"
+                )
+                raise SpaceApiClientCommunicationError(msg) from exception
 
     async def async_set_space_state(self, *, open_state: bool) -> Any:
         """Set space state via the API."""
         if not self._api_key:
+            # Local configuration error, not a server-rejected credential. Using
+            # the auth-error class here would trigger HA's reauth flow, which is
+            # the wrong UX since the user never had a key in the first place.
             msg = "API key is required to set space state"
-            raise IntegrationBlueprintApiClientAuthenticationError(msg)
+            raise SpaceApiClientError(msg)
         message = "Space was switched on" if open_state else "Space was switched off"
         return await self._api_wrapper(
             method="post",
@@ -188,7 +190,7 @@ class IntegrationBlueprintApiClient:
     ) -> Any:
         """Get information from the API."""
         try:
-            async with async_timeout.timeout(10):
+            async with asyncio.timeout(10):
                 response = await self._session.request(
                     method=method,
                     url=url,
@@ -200,16 +202,21 @@ class IntegrationBlueprintApiClient:
 
         except TimeoutError as exception:
             msg = f"Timeout error fetching information - {exception}"
-            raise IntegrationBlueprintApiClientCommunicationError(
+            raise SpaceApiClientCommunicationError(
                 msg,
             ) from exception
         except (aiohttp.ClientError, socket.gaierror) as exception:
             msg = f"Error fetching information - {exception}"
-            raise IntegrationBlueprintApiClientCommunicationError(
+            raise SpaceApiClientCommunicationError(
                 msg,
             ) from exception
-        except Exception as exception:  # pylint: disable=broad-except
-            msg = f"Something really wrong happened! - {exception}"
-            raise IntegrationBlueprintApiClientError(
+        except SpaceApiClientError:
+            # Already shaped for the caller (e.g. auth error)
+            raise
+        except asyncio.CancelledError:
+            raise
+        except Exception as exception:
+            msg = f"Unexpected error fetching information - {exception}"
+            raise SpaceApiClientError(
                 msg,
             ) from exception

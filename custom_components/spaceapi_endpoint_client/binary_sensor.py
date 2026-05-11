@@ -9,14 +9,14 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 
-from .entity import IntegrationBlueprintEntity
+from .entity import SpaceApiEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-    from .coordinator import BlueprintDataUpdateCoordinator
-    from .data import IntegrationBlueprintConfigEntry
+    from .coordinator import SpaceApiDataUpdateCoordinator
+    from .data import SpaceApiConfigEntry
 
 ENTITY_DESCRIPTIONS = (
     BinarySensorEntityDescription(
@@ -29,12 +29,12 @@ ENTITY_DESCRIPTIONS = (
 
 async def async_setup_entry(
     hass: HomeAssistant,  # noqa: ARG001 Unused function argument: `hass`
-    entry: IntegrationBlueprintConfigEntry,
+    entry: SpaceApiConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the binary sensor platform."""
     async_add_entities(
-        IntegrationBlueprintBinarySensor(
+        SpaceApiBinarySensor(
             coordinator=entry.runtime_data.coordinator,
             entity_description=entity_description,
         )
@@ -42,15 +42,15 @@ async def async_setup_entry(
     )
 
 
-class IntegrationBlueprintBinarySensor(
-    IntegrationBlueprintEntity,
+class SpaceApiBinarySensor(
+    SpaceApiEntity,
     BinarySensorEntity,
 ):
-    """spaceapi_endpoint_client binary sensor class."""
+    """Binary sensor reflecting the space's open/closed state."""
 
     def __init__(
         self,
-        coordinator: BlueprintDataUpdateCoordinator,
+        coordinator: SpaceApiDataUpdateCoordinator,
         entity_description: BinarySensorEntityDescription,
     ) -> None:
         """Initialize the binary sensor class."""
