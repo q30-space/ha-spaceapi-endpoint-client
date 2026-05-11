@@ -46,6 +46,7 @@ async def test_user_flow_happy_path(
     # Sanitized values are persisted, not the raw user input.
     assert result["data"][CONF_HOST] == "https://example.com"
     assert result["data"][CONF_API_KEY] == "abc123"
+    await hass.async_block_till_done()
 
 
 async def test_user_flow_invalid_url(
