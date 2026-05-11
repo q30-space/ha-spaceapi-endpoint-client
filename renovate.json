@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
+      "matchPackageNames": [
+        "homeassistant",
+        "pytest-homeassistant-custom-component"
+      ],
+      "enabled": false,
+      "description": "Owned by the monthly bump-ha.yml workflow"
+    }
+  ]
+}
