@@ -21,9 +21,9 @@ There are **three** HA version pins, each with a different job:
 
 | Location | Meaning |
 |---|---|
-| `manifest.json` `min_ha_version` + `hacs.json` `homeassistant` | The supported floor. Raised only when code requires a newer HA. |
+| `hacs.json` `homeassistant` | The supported floor. Raised only when code requires a newer HA. (HA core has no manifest-level minimum for custom integrations.) |
 | `requirements.txt` | Latest stable HA, owned by `.github/workflows/bump-ha.yml`. Used by `scripts/develop` and the "latest" CI matrix cell. |
-| `requirements-floor.txt` | Floor pins (HA + paired `pytest-homeassistant-custom-component`) for the "floor" CI matrix cell. Mirrors `min_ha_version`. |
+| `requirements-floor.txt` | Floor pins (HA + paired `pytest-homeassistant-custom-component`) for the "floor" CI matrix cell. Mirrors `hacs.json`'s floor. |
 
 **Do not bump `homeassistant` or `pytest-homeassistant-custom-component` manually in `requirements.txt`** — the bump workflow owns that pair. Dependabot is configured to ignore both. CONTRIBUTING.md has the procedure for raising the floor (the `pytest-homeassistant-custom-component` version that pairs with a given HA release must be looked up on PyPI).
 
@@ -56,6 +56,6 @@ Lint via `ruff format . && ruff check .` (or `scripts/lint`, which auto-fixes). 
 ## Things easy to get wrong
 
 - **Don't include the `requirements.txt` HA pin in lint.yml installs** — HA requires Python 3.14.2+, the lint runner's Python may not match, and lint doesn't need HA anyway. Only install `ruff`.
-- **Don't merge a PR that touches `manifest.json`'s `min_ha_version` without also updating `hacs.json` and `requirements-floor.txt` in the same PR.** The CI floor cell will catch the mismatch but the merge order matters.
+- **Don't merge a PR that touches `hacs.json`'s `homeassistant` floor without also updating `requirements-floor.txt` in the same PR.** The CI floor cell will catch the mismatch but the merge order matters.
 - **The fallback in `async_get_space_state` (no API key → GET `host_url` directly) is intentional.** Don't "fix" it; users with raw `spaceapi.json` URLs depend on it.
 - **The "missing API key" error in `async_set_space_state` must NOT be `SpaceApiClientAuthenticationError`** — that subclass triggers HA's reauth flow, which is wrong for a local config gap. Use the base `SpaceApiClientError`.
