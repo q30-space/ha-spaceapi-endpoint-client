@@ -29,6 +29,7 @@ fixture-parentheses = false
     "S106",     # same
     "PLC0415",  # local imports are fine in test helpers
     "TC002",    # don't care about TYPE_CHECKING imports in tests
+    "SLF001",   # tests may reach into script/module internals
 ]
 "scripts/**" = [
     "D",        # CLI helpers don't need full docstring coverage
