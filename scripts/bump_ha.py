@@ -44,6 +44,62 @@ def _latest_stable(versions: list[str]) -> str:
     return stable[-1]
 
 
+def _required_python(ha_data: dict, ha_version: str) -> str | None:
+    """Return the ``Requires-Python`` specifier declared for ``ha_version``.
+
+    Prefer the per-release file metadata; fall back to the project-level
+    ``info`` block when ``ha_version`` is the latest release. Returns None
+    when PyPI declares no Python constraint (older HA releases don't).
+    """
+    for dist in ha_data["releases"].get(ha_version) or []:
+        spec = dist.get("requires_python")
+        if spec:
+            return spec
+    info = ha_data.get("info", {})
+    if info.get("version") == ha_version:
+        return info.get("requires_python")
+    return None
+
+
+def _python_floor(requires_python: str | None) -> tuple[int, ...] | None:
+    """Extract the ``>=`` lower bound from a ``Requires-Python`` specifier.
+
+    HA declares a single ``>=X.Y[.Z]`` floor. We deliberately parse only
+    that clause: if the spec is missing or shaped unexpectedly we return
+    None, so the preflight skips rather than false-blocking a valid bump.
+    """
+    if not requires_python:
+        return None
+    match = re.search(r">=\s*(\d+)\.(\d+)(?:\.(\d+))?", requires_python)
+    if not match:
+        return None
+    return tuple(int(part or 0) for part in match.groups())
+
+
+def _python_preflight(
+    ha_data: dict, ha_version: str, current: tuple[int, ...]
+) -> str | None:
+    """Return an error message if ``current`` Python can't install ``ha_version``.
+
+    The bump workflow resolves the newest HA from PyPI (which applies no
+    Python constraint) and then installs it, so a runner older than HA's
+    ``Requires-Python`` floor only fails two steps later with an opaque pip
+    "No matching distribution" error. This spots it up front. Returns None
+    when the runner is new enough, or when PyPI declares no parseable floor.
+    """
+    floor = _python_floor(_required_python(ha_data, ha_version))
+    if not floor or current >= floor:
+        return None
+    need = ".".join(str(part) for part in floor)
+    have = ".".join(str(part) for part in current)
+    return (
+        f"homeassistant=={ha_version} requires Python >={need}, but this "
+        f"runner has Python {have}. Update python-version in "
+        f".github/workflows/bump-ha.yml (and the 'latest' cell of test.yml) "
+        f"to >={need} before this workflow can install it."
+    )
+
+
 def _matching_plugin(plugin_data: dict, ha_version: str) -> str:
     """Find the highest plugin release whose Requires-Dist pins ``ha_version``.
 
@@ -98,6 +154,13 @@ def _rewrite(path: Path, ha_version: str, plugin_version: str) -> bool:
 def main() -> int:
     ha_data = _fetch(PYPI_HA)
     ha_latest = _latest_stable(list(ha_data["releases"].keys()))
+
+    # Fail fast if this runner is too old to install the HA we just resolved.
+    problem = _python_preflight(ha_data, ha_latest, sys.version_info[:3])
+    if problem:
+        print(problem, file=sys.stderr)
+        return 1
+
     plugin_data = _fetch(PYPI_PLUGIN)
     plugin_version = _matching_plugin(plugin_data, ha_latest)
 
